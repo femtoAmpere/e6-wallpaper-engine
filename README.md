@@ -2,12 +2,10 @@
 Wallpaper slideshow based on e621.net tags
 
 ## Requirements
-Python3  
-_tested on Python3.6_
+Be sane and have git installed, please.
 
 ## Usage
-EZ Startup: Make sure `%PATH%` is set correctly and run `pythonw.exe .\main.py`.   
-_You can also use `run_in_background.cmd`_
+Try running `run_in_foreground.cmd`.
 
 - Adjust `wallengine/config.py` as you like. 
 - If you want soft image transition/animation on change:  (Un)Comment the marked lines in `main.py` to use Windows slideshow. Use same setting for `slideshow_minutes` as in Windows settings.  

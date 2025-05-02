@@ -50,19 +50,6 @@ def get_files_in_dir(fdir):
     return files
 
 
-def _list_to_string(list_to_str, separator):
-    """
-    Convert a list to a string with separator.
-    :param list_to_str: List to be converted to string.
-    :param separator: String seperator between list items
-    :return: String from converted list
-    """
-    str_return = ''
-    for item in list_to_str:
-        str_return = str_return + urllib.parse.quote(str(item)) + separator
-    return str_return.rsplit(separator, 1)[0]
-
-
 def _download_file(url, filename, overwrite=False):
     """
     Download a file via stream.
@@ -94,26 +81,27 @@ def get_submissions(tags, amount=16, pool_size=320):
     :param pool_size: submission pool size to take the samples from
     :return: list of randomly picked submissions
     """
-    if pool_size > 320 or pool_size < 1:  # hard limit of 320 https://e621.net/help/api
-        pool_size = 320
-    api_url = random.choice(['https://e621.net/', 'https://e6ai.net/']) + 'posts.json?tags=' + _list_to_string(tags, '+') + '&limit=' + str(pool_size)
-    logger.debug('Getting e621 api call json for ' + api_url)
+
+    api = random.choice(config.e6apis)
+
+    api_url = f'https://{api}/posts.json?tags={'+'.join(tags)}&limit={pool_size}'
+    logger.debug('Getting e6 api call json for ' + api_url)
     r = requests.get(api_url, allow_redirects=True, headers={'User-Agent': f'wallpaper engine {config.version} by femtoAmpere'})
 
-    i = 0
+    if not "posts" in r.json():
+        logger.error('Could not get posts from e6 api. Response: ' + str(r.json()))
+        return []
+    
     submissions = []
-    while len(submissions) < amount:
-        submission = random.choice(r.json()["posts"])
+    for submission in r.json()["posts"]:
         if submission["file"]["url"] and submission["id"] not in submissions:
             logger.debug("Adding submission " + str(submission["id"]))
-            submissions.append(submission)
-        if i > amount*1.5:
-            logger.warning("Could not get full submissions. i = " + str(i) + ", submissions: " + str(submissions))
-            break
-        else:
-            i += 1
+            submissions.append((api, submission))
+            continue
+        logger.warning("Could not get submissions: " + str(submissions))
 
-    return submissions
+    _ = random.shuffle(submissions)
+    return submissions[:amount]
 
 
 def download_submissions(submissions, target_dir):
@@ -125,9 +113,12 @@ def download_submissions(submissions, target_dir):
     """
     downloaded = []
     for submission in submissions:
-        fname = os.path.join(".", target_dir, str(submission['id']) + '.' + submission['file']['ext'])
+        groupdir = os.path.join(target_dir, submission[0])
+        if not os.path.isdir(groupdir):
+            os.mkdir(groupdir)
+        fname = os.path.join(".", groupdir, str(submission[1]['id']) + '.' + submission[1]['file']['ext'])
         try:
-            downloaded.append(_download_file(submission['file']['url'], fname))
+            downloaded.append(_download_file(submission[1]['file']['url'], fname))
         except Exception as e:
-            logger.error('Could not download post ' + str(submission['id']) + '. Exception: ' + str(e))
+            logger.error('Could not download post ' + str(submission[1]['id']) + '. Exception: ' + str(e))
     return downloaded
