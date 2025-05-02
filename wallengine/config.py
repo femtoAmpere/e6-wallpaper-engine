@@ -2,6 +2,7 @@ import subprocess
 import os
 
 slideshow_minutes = 16  # minutes until wallpaper swaps
+#slideshow_minutes = 1
 
 slideshow_screens = 3  # number of screens/monitors you are using
 

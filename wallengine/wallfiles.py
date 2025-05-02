@@ -1,6 +1,5 @@
 from wallengine import config
 
-import urllib.parse
 import requests
 
 import random
@@ -9,10 +8,9 @@ import send2trash
 
 import logging
 
-logger = logging.getLogger("files")
+logger = logging.getLogger("wallfiles")
 
-
-def download_wallpapers(tags, download_dir, amount, pool_size):
+def download_wallpapers(tags, api, download_dir, amount, pool_size):
     """
     Get files from e621.net
     :param tags: e621 tags
@@ -21,8 +19,9 @@ def download_wallpapers(tags, download_dir, amount, pool_size):
     :param pool_size: pool size to download from
     :return:
     """
-    submissions = get_submissions(tags, amount, pool_size)
-    return download_submissions(submissions, download_dir)
+    submissions = get_submissions(tags, api, amount, pool_size)
+    walls = download_submissions(submissions, download_dir)
+    return walls
 
 
 def trash_files(files):
@@ -73,7 +72,7 @@ def _download_file(url, filename, overwrite=False):
     return filename
 
 
-def get_submissions(tags, amount=16, pool_size=320):
+def get_submissions(tags, api, amount=16, pool_size=320):
     """
     Get submissions from e621.net: https://e621.net/help/api
     :param tags: list of tags for e621
@@ -81,8 +80,6 @@ def get_submissions(tags, amount=16, pool_size=320):
     :param pool_size: submission pool size to take the samples from
     :return: list of randomly picked submissions
     """
-
-    api = random.choice(config.e6apis)
 
     api_url = f'https://{api}/posts.json?tags={'+'.join(tags)}&limit={pool_size}'
     logger.debug('Getting e6 api call json for ' + api_url)
@@ -96,7 +93,9 @@ def get_submissions(tags, amount=16, pool_size=320):
     for submission in r.json()["posts"]:
         if submission["file"]["url"] and submission["id"] not in submissions:
             logger.debug("Adding submission " + str(submission["id"]))
-            submissions.append((api, submission))
+            submission['site'] = api
+            submission['post_url'] = f'https://{api}/posts/{submission["id"]}'
+            submissions.append(submission)
             continue
         logger.warning("Could not get submissions: " + str(submissions))
 
@@ -113,12 +112,14 @@ def download_submissions(submissions, target_dir):
     """
     downloaded = []
     for submission in submissions:
-        groupdir = os.path.join(target_dir, submission[0])
+        groupdir = os.path.join(target_dir, submission['site'])
         if not os.path.isdir(groupdir):
             os.mkdir(groupdir)
-        fname = os.path.join(".", groupdir, str(submission[1]['id']) + '.' + submission[1]['file']['ext'])
+        fname = os.path.join(".", groupdir, str(submission['id']) + '.' + submission['file']['ext'])
+
         try:
-            downloaded.append(_download_file(submission[1]['file']['url'], fname))
+            submission['file_path'] = _download_file(submission['file']['url'], fname)
+            downloaded.append(submission)
         except Exception as e:
             logger.error('Could not download post ' + str(submission[1]['id']) + '. Exception: ' + str(e))
     return downloaded

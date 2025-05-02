@@ -1,4 +1,3 @@
-import os
 import time
 
 from wallengine import wallengine, config
@@ -9,7 +8,7 @@ import logging
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s *%(levelname)s* %(name)s in %(filename)s.%(funcName)s (%(threadName)s): %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
-                    filename=os.path.join('.', 'walls.log'),
+                    filename=__file__ + ".log",
                     filemode='a')
 
 console = logging.StreamHandler()
@@ -19,7 +18,7 @@ logging.getLogger("").addHandler(console)
 
 engine = wallengine.WallEngine(
     wall_cache_dir=config.directory,
-    wall_cache_size=int(config.slideshow_screens * 20 / config.slideshow_minutes),  #  cache for 20 minutes
+    wall_cache_size=int(config.slideshow_screens * 60 / config.slideshow_minutes),  #  cache for 60 minutes
     wall_cache_tags=config.tags,
     wall_cache_rng_pool_size=config.rng_pool_size
     )
