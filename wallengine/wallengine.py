@@ -3,6 +3,8 @@ from datetime import datetime
 import random
 import ctypes
 
+from winotify import Notification
+
 from wallengine import wallfiles
 from wallengine import config
 
@@ -68,4 +70,12 @@ class WallEngine:
         # SPI_SETDESKWALLPAPER = 0x0014
         sysparamw_return = ctypes.windll.user32.SystemParametersInfoW(0x0014, 0, wallpaper, 0)
         logger.debug("SystemParametersInfoW Return: " + str(sysparamw_return))
+        toast = Notification(app_id="Wallpaper Engine",
+                             title="Wallpaper Updated",
+                             msg=f'{w['post_url']}',
+                             duration="long",
+                             icon=os.path.dirname(os.path.realpath(__file__)) + '/notification.ico',
+                             )
+        toast.add_actions(label=f"{w['site']} Post", launch=w['post_url'])
+        toast.show()
         return sysparamw_return

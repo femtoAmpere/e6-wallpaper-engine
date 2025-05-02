@@ -1,2 +1,3 @@
 send2trash
 requests
+winotify
