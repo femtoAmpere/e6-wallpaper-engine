@@ -65,14 +65,14 @@ class WallEngine:
         w = self.cache_imgs.pop(0)
         wallpaper = os.path.abspath(w['file_path'])
         logger.info("Setting wallpaper to " + str(wallpaper))
-        with open('wallpaper-history.txt', 'a+') as f:
-            f.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: {w['post_url']} {w['tags']}\n')
         # SPI_SETDESKWALLPAPER = 0x0014
         sysparamw_return = ctypes.windll.user32.SystemParametersInfoW(0x0014, 0, wallpaper, 0)
         logger.debug("SystemParametersInfoW Return: " + str(sysparamw_return))
+        with open('wallpaper-history.txt', 'a+') as f:
+            f.write(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: {w['post_url']}\n')
         toast = Notification(app_id="Wallpaper Engine",
-                             title="Wallpaper Updated",
-                             msg=f'{w['post_url']}',
+                             title=datetime.now().strftime("@%H:%M:%S"),
+                             msg=w['post_url'],
                              duration="long",
                              icon=os.path.dirname(os.path.realpath(__file__)) + '/notification.ico',
                              )
